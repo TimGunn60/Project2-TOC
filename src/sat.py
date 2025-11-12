@@ -126,8 +126,34 @@ class SatSolver(SatSolverAbstractClass):
             
 
     def sat_bruteforce(self, n_vars:int, clauses:List[List[int]]) -> Tuple[bool, Dict[int, bool]]:
-        pass
 
+        # 2^n possible assignments
+        total = 1 << n_vars
+        for mask in range(total):
+            # Build current literal assignment: variable i is True iff bit (i-1) is set
+            assignment = {i: bool((mask >> (i - 1)) & 1) for i in range(1, n_vars + 1)}
+
+            # Evaluate CNF with this assignment
+            all_clauses_true = True
+            for clause in clauses:
+                clause_true = False  # OR of literals in clause
+                for lit in clause:
+                    val = assignment.get(abs(lit), False)
+                    if lit < 0:
+                        val = not val
+                    if val:
+                        clause_true = True
+                        break  # short-circuit OR if one evaluated literal is true
+                if not clause_true:
+                    all_clauses_true = False
+                    break  # short-circuit AND if one clause is false
+
+            if all_clauses_true:
+                return True, assignment
+
+        # No satisfying assignment found
+        return False, {}
+            
     def sat_bestcase(self, n_vars:int, clauses:List[List[int]]) -> Tuple[bool, Dict[int, bool]]:
         pass
 

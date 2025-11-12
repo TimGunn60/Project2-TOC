@@ -57,7 +57,73 @@ class SatSolver(SatSolverAbstractClass):
 
 
     def sat_backtracking(self, n_vars:int, clauses:List[List[int]]) -> Tuple[bool, Dict[int, bool]]:
-        pass
+        #Dictionary for variable assignments
+        assignments = {}
+
+        #Copy of the list of clauses
+        clauses_copy = [clause[:] for clause in clauses]
+
+        #Loop flag
+        changed = True
+
+        while changed:
+            changed = False
+            #Look for unit clauses
+            for clause in clauses_copy:
+                if len(clause) == 1:
+                    literal = clause[0]
+                    variable = abs(literal)
+                
+                if variable not in assignments:
+                    assignments[variable] = (literal > 0)
+                    changed = True
+            
+            #Simplify other clauses based on current assignments
+            new_clauses = []
+            for clause in clauses_copy:
+                is_satisfied = False
+                new_clause = []
+
+                for literal in clause:
+                    variable = abs(literal)
+                    if variable in assignments:
+                        if (literal > 0 and assignments[variable]) or (literal < 0 and not assignments[variable]):
+                            is_satisfied = True
+                            break
+                    else:
+                        new_clause.append(literal)
+
+                if not is_satisfied:
+                    #Empty clause means all literals were false
+                    if not new_clause:
+                        return False, {}
+                    new_clauses.append(new_clause)
+
+            #Update the clauses
+            clauses_copy = new_clauses
+
+        #If no clauses remain, everything is satisfied
+        if not clauses_copy:
+            return True, assignments
+        
+        #Find the first unassigned variable for branching
+        unassigned = None
+        for i in range(1, n_vars+1):
+            if i not in assignments:
+                unassigned = i
+                break
+
+        #Try assigning true to the variable
+        satisfiable, assignment = self.sat_backtracking(n_vars, clauses_copy + [[unassigned]])
+        if satisfiable:
+            return True, assignment
+        
+        #Try false if True does not work
+        return self.sat_backtracking(n_vars, clauses_copy + [[-unassigned]])
+        
+
+
+            
 
     def sat_bruteforce(self, n_vars:int, clauses:List[List[int]]) -> Tuple[bool, Dict[int, bool]]:
         pass

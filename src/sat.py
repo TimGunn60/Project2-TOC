@@ -161,7 +161,47 @@ class SatSolver(SatSolverAbstractClass):
         return False, {}
             
     def sat_bestcase(self, n_vars:int, clauses:List[List[int]]) -> Tuple[bool, Dict[int, bool]]:
-        pass
+        # Error check
+        if not clauses:
+            return True, {}
+
+        # 2^N total possible arrangements 
+        total = 1 << n_vars
+
+        # Keep track of best assignment
+        best_assignment = {}
+        best_satisfied = -1
+        n_clauses = len(clauses)
+
+        for mask in range(total):
+            # Build current literal assignment: variable i is True iff bit (i-1) is set
+            assignment = {i: bool((mask >> (i - 1)) & 1) for i in range(1, n_vars + 1)}
+
+            # Evaluate CNF with this assignment
+            satisfied_count = 0
+            for clause in clauses:
+                clause_true = False  # OR of literals in clause
+                for lit in clause:
+                    val = assignment.get(abs(lit), False)
+                    if lit < 0:
+                        val = not val
+                    if val:
+                        clause_true = True
+                        break  # short-circuit OR if one evaluated literal is true
+                if clause_true:
+                    satisfied_count += 1
+
+            # Update best so far
+            if satisfied_count > best_satisfied:
+                best_satisfied = satisfied_count
+                best_assignment = assignment
+
+                # If all clauses satisfied, full SAT solution found
+                if best_satisfied == n_clauses:
+                    return True, best_assignment
+
+        # Problem is unsatisfiable, but we can return the closest assignment
+        return False, {}
 
     def sat_simple(self, n_vars:int, clauses:List[List[int]]) -> Tuple[bool, Dict[int, bool]]:
         pass
